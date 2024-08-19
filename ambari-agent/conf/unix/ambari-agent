@@ -171,7 +171,7 @@ export AMBARI_PASSPHRASE=${RESOLVED_AMBARI_PASSPHRASE}
 
 
 get_python_version(){
- python - <<EOF
+ python3 - <<EOF
 import sys
 ver = tuple(sys.version_info)
 print("{}{}".format(ver[0], ver[1]))

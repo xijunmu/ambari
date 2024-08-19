@@ -250,6 +250,10 @@ class OSCheck:
       operatingSystem = 'redhat'
     elif operatingSystem.startswith('rocky linux'):
       operatingSystem = 'redhat'
+    elif operatingSystem.startswith('kylin linux'):
+      operatingSystem = 'redhat'
+    elif operatingSystem.startswith('openeuler'):
+      operatingSystem = 'redhat'
     elif operatingSystem.startswith('darwin'):
       operatingSystem = 'mac'
 
@@ -300,10 +304,16 @@ class OSCheck:
     # Read content from /etc/*-release file
     # Full release name
     dist = OSCheck.os_distribution()
-    dist = dist[1]
-    
-    if dist:
-      return dist
+    version = dist[1]
+    operatingSystem = dist[0].lower()
+
+    if version:
+      if operatingSystem.startswith('kylin linux'):
+        if version =='V10':
+          version ='8'
+      elif operatingSystem.startswith('openeuler'):
+        version ='8'
+      return version
     else:
       raise Exception("Cannot detect os version. Exiting...")
 
