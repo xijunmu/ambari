@@ -67,7 +67,7 @@
   </property>
   <property>
     <name>hbase.cluster.distributed</name>
-    <value>true</value>
+    <value>false</value>
     <description>
       The mode the cluster will be in. Possible values are false for
       standalone mode and true for distributed mode. If false, startup will run

@@ -229,8 +229,8 @@ App.WizardStep1Controller = Em.Controller.extend({
     if (selectedStack) {
       selectedStack.setProperties({
         useRedhatSatellite: false,
-        usePublicRepo: true,
-        useLocalRepo: false
+        usePublicRepo: false,
+        useLocalRepo: true
       });
       selectedStack.restoreReposBaseUrls();
     }
