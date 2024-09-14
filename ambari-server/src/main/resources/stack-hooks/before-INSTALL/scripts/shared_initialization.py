@@ -30,7 +30,7 @@ def install_packages():
     return
 
   packages = ['unzip', 'curl']
-  if params.stack_version_formatted != "" and compare_versions(params.stack_version_formatted, '3.2.0') >= 0:
+  if params.stack_version_formatted != "" and compare_versions(params.stack_version_formatted, '0.0.0') >= 0:
     stack_selector_package = stack_tools.get_stack_tool_package(stack_tools.STACK_SELECTOR_NAME)
     packages.append(stack_selector_package)
   Package(packages,

@@ -78,11 +78,11 @@ App.WizardStep1Controller = Em.Controller.extend({
   optionsToSelect: {
     'usePublicRepo': {
       index: 0,
-      isSelected: true
+      isSelected: false
     },
     'useLocalRepo': {
       index: 1,
-      isSelected: false,
+      isSelected: true,
       'uploadFile': {
         index: 0,
         name: 'uploadFile',
@@ -229,8 +229,8 @@ App.WizardStep1Controller = Em.Controller.extend({
     if (selectedStack) {
       selectedStack.setProperties({
         useRedhatSatellite: false,
-        usePublicRepo: false,
-        useLocalRepo: true
+        usePublicRepo: true,
+        useLocalRepo: false
       });
       selectedStack.restoreReposBaseUrls();
     }
@@ -246,7 +246,8 @@ App.WizardStep1Controller = Em.Controller.extend({
         usePublicRepo: false,
         useLocalRepo: true
       });
-      selectedStack.cleanReposBaseUrls();
+      //selectedStack.cleanReposBaseUrls();
+      selectedStack.restoreReposBaseUrls();
     }
   },
 
