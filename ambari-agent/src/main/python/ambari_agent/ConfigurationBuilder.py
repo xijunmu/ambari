@@ -45,7 +45,8 @@ class ConfigurationBuilder:
         'localComponents': self.topology_cache.get_cluster_local_components(cluster_id),
         'componentVersionMap': self.topology_cache.get_cluster_component_version_map(cluster_id),
         'agentLevelParams': {'hostname': self.topology_cache.get_current_host_info(cluster_id)['hostName']},
-        'clusterName': metadata_cache.clusterLevelParams.cluster_name
+        'clusterName': metadata_cache.clusterLevelParams.cluster_name,
+        'iotSymlinkDir': '/usr/iotplatform'
       }
 
       if service_name is not None and service_name != 'null':
