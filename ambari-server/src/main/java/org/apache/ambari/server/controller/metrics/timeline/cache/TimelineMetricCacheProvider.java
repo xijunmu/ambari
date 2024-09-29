@@ -17,21 +17,21 @@
  */
 package org.apache.ambari.server.controller.metrics.timeline.cache;
 
-import java.time.Duration;
-
 import org.apache.ambari.server.configuration.Configuration;
-import org.ehcache.Cache;
-import org.ehcache.CacheManager;
-import org.ehcache.config.builders.CacheConfigurationBuilder;
-import org.ehcache.config.builders.CacheManagerBuilder;
-import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.ehcache.config.units.EntryUnit;
-import org.ehcache.core.internal.statistics.DefaultStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.config.CacheConfiguration;
+import net.sf.ehcache.config.PersistenceConfiguration;
+import net.sf.ehcache.config.PersistenceConfiguration.Strategy;
+import net.sf.ehcache.config.SizeOfPolicyConfiguration;
+import net.sf.ehcache.config.SizeOfPolicyConfiguration.MaxDepthExceededBehavior;
+import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 /**
  * Cache implementation that provides ability to perform incremental reads
@@ -42,6 +42,7 @@ import com.google.inject.Singleton;
 public class TimelineMetricCacheProvider {
   private TimelineMetricCache timelineMetricsCache;
   private volatile boolean isCacheInitialized = false;
+  public static final String TIMELINE_METRIC_CACHE_MANAGER_NAME = "timelineMetricCacheManager";
   public static final String TIMELINE_METRIC_CACHE_INSTANCE_NAME = "timelineMetricCache";
 
   Configuration configuration;
@@ -57,52 +58,63 @@ public class TimelineMetricCacheProvider {
   }
 
   private synchronized void initializeCache() {
+    // Check in case of contention to avoid ObjectExistsException
     if (isCacheInitialized) {
       return;
     }
-    DefaultStatisticsService statisticsService = new DefaultStatisticsService();
 
-    CacheManager manager = CacheManagerBuilder.newCacheManagerBuilder()
-            .using(statisticsService)
-            .build(true);
+    System.setProperty("net.sf.ehcache.skipUpdateCheck", "true");
+    if (configuration.useMetricsCacheCustomSizingEngine()) {
+      // Use custom sizing engine to speed cache sizing calculations
+      System.setProperty("net.sf.ehcache.sizeofengine." + TIMELINE_METRIC_CACHE_MANAGER_NAME,
+        "org.apache.ambari.server.controller.metrics.timeline.cache.TimelineMetricsCacheSizeOfEngine");
+    }
+
+    net.sf.ehcache.config.Configuration managerConfig =
+      new net.sf.ehcache.config.Configuration();
+    managerConfig.setName(TIMELINE_METRIC_CACHE_MANAGER_NAME);
+
+    // Set max heap available to the cache manager
+    managerConfig.setMaxBytesLocalHeap(configuration.getMetricsCacheManagerHeapPercent());
+
+    //Create a singleton CacheManager using defaults
+    CacheManager manager = CacheManager.create(managerConfig);
+
+    LOG.info("Creating Metrics Cache with timeouts => ttl = " +
+      configuration.getMetricCacheTTLSeconds() + ", idle = " +
+      configuration.getMetricCacheIdleSeconds());
 
     // Create a Cache specifying its configuration.
-    CacheConfigurationBuilder<TimelineAppMetricCacheKey, TimelineMetricsCacheValue> cacheConfigurationBuilder = createCacheConfiguration();
-    Cache<TimelineAppMetricCacheKey, TimelineMetricsCacheValue> cache = manager.createCache(TIMELINE_METRIC_CACHE_INSTANCE_NAME, cacheConfigurationBuilder);
+    CacheConfiguration cacheConfiguration = createCacheConfiguration();
+    Cache cache = new Cache(cacheConfiguration);
 
-    // Decorate with timelineMetricsCache.
-    timelineMetricsCache = new TimelineMetricCache(cache, cacheEntryFactory, statisticsService);
+    // Decorate with UpdatingSelfPopulatingCache
+    timelineMetricsCache = new TimelineMetricCache(cache, cacheEntryFactory);
 
     LOG.info("Registering metrics cache with provider: name = " +
-      TIMELINE_METRIC_CACHE_INSTANCE_NAME + ", manager = " + manager);
+      cache.getName() + ", guid: " + cache.getGuid());
+
+    manager.addCache(timelineMetricsCache);
 
     isCacheInitialized = true;
   }
 
   // Having this as a separate public method for testing/mocking purposes
-  public CacheConfigurationBuilder createCacheConfiguration() {
-    LOG.info("Creating Metrics Cache with timeouts => ttl = " +
-      configuration.getMetricCacheTTLSeconds() + ", idle = " +
-      configuration.getMetricCacheIdleSeconds() + ", cache size = " + configuration.getMetricCacheEntryUnitSize());
+  public CacheConfiguration createCacheConfiguration() {
 
-    TimelineMetricCacheCustomExpiry timelineMetricCacheCustomExpiry = new TimelineMetricCacheCustomExpiry(
-            Duration.ofSeconds(configuration.getMetricCacheTTLSeconds()),
-            Duration.ofSeconds(configuration.getMetricCacheIdleSeconds())
-    );
+    CacheConfiguration cacheConfiguration = new CacheConfiguration()
+      .name(TIMELINE_METRIC_CACHE_INSTANCE_NAME)
+      .timeToLiveSeconds(configuration.getMetricCacheTTLSeconds()) // 1 hour
+      .timeToIdleSeconds(configuration.getMetricCacheIdleSeconds()) // 5 minutes
+      .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU)
+      .sizeOfPolicy(new SizeOfPolicyConfiguration() // Set sizeOf policy to continue on max depth reached - avoid OOM
+        .maxDepth(10000)
+        .maxDepthExceededBehavior(MaxDepthExceededBehavior.CONTINUE))
+      .eternal(false)
+      .persistence(new PersistenceConfiguration()
+        .strategy(Strategy.NONE.name()));
 
-    CacheConfigurationBuilder<TimelineAppMetricCacheKey, TimelineMetricsCacheValue> cacheConfigurationBuilder = CacheConfigurationBuilder
-            .newCacheConfigurationBuilder(
-                    TimelineAppMetricCacheKey.class,
-                    TimelineMetricsCacheValue.class,
-                    ResourcePoolsBuilder.newResourcePoolsBuilder()
-                    .heap(configuration.getMetricCacheEntryUnitSize(), EntryUnit.ENTRIES)
-            )
-            .withKeySerializer(TimelineAppMetricCacheKeySerializer.class)
-            .withValueSerializer(TimelineMetricsCacheValueSerializer.class)
-            .withLoaderWriter(cacheEntryFactory)
-            .withExpiry(timelineMetricCacheCustomExpiry);
-
-    return cacheConfigurationBuilder;
+    return cacheConfiguration;
   }
 
   /**
@@ -119,4 +131,5 @@ public class TimelineMetricCacheProvider {
     }
     return timelineMetricsCache;
   }
+
 }

@@ -17,7 +17,6 @@
  */
 package org.apache.ambari.server.controller.metrics.timeline.cache;
 
-import static junit.framework.Assert.assertNotNull;
 import static org.apache.ambari.server.controller.metrics.timeline.cache.TimelineMetricCacheProvider.TIMELINE_METRIC_CACHE_INSTANCE_NAME;
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
@@ -25,20 +24,19 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.createMockBuilder;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.getCurrentArguments;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 
 import java.lang.reflect.Field;
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.ambari.server.configuration.Configuration;
@@ -49,101 +47,98 @@ import org.apache.hadoop.metrics2.sink.timeline.TimelineMetric;
 import org.apache.hadoop.metrics2.sink.timeline.TimelineMetrics;
 import org.apache.http.client.utils.URIBuilder;
 import org.easymock.EasyMock;
-import org.ehcache.Cache;
-import org.ehcache.CacheManager;
-import org.ehcache.config.builders.CacheConfigurationBuilder;
-import org.ehcache.config.builders.CacheManagerBuilder;
-import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.ehcache.config.units.EntryUnit;
-import org.ehcache.core.internal.statistics.DefaultStatisticsService;
+import org.easymock.IAnswer;
+import org.junit.After;
 import org.junit.Test;
 
 import junit.framework.Assert;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.config.CacheConfiguration;
+import net.sf.ehcache.config.PersistenceConfiguration;
+import net.sf.ehcache.config.SizeOfPolicyConfiguration;
+import net.sf.ehcache.constructs.blocking.UpdatingCacheEntryFactory;
+import net.sf.ehcache.constructs.blocking.UpdatingSelfPopulatingCache;
+import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 public class TimelineMetricCacheTest {
 
+  @After
+  public void removeCacheInstance() {
+    // Avoids Object Exists Exception on unit tests by adding a new cache for
+    // every provider.
+    CacheManager manager = CacheManager.getInstance();
+    manager.removeAllCaches();
+  }
+
   // General cache behavior demonstration
   @Test
-  public void testTimelineMetricCache() throws Exception {
-    TimelineMetricCacheEntryFactory cacheEntryFactory = createMock(TimelineMetricCacheEntryFactory.class);
+  public void testSelfPopulatingCacheUpdates() throws Exception {
+    UpdatingCacheEntryFactory cacheEntryFactory = createMock(UpdatingCacheEntryFactory.class);
 
-    final long now = System.currentTimeMillis();
-    TimelineMetrics metrics = new TimelineMetrics();
-    TimelineMetric timelineMetric = new TimelineMetric();
-    timelineMetric.setMetricName("cpu_user");
-    timelineMetric.setAppId("app1");
-    TreeMap<Long, Double> metricValues = new TreeMap<>();
-    metricValues.put(now + 100, 1.0);
-    metricValues.put(now + 200, 2.0);
-    metricValues.put(now + 300, 3.0);
-    timelineMetric.setMetricValues(metricValues);
-    metrics.getMetrics().add(timelineMetric);
-    TimelineMetricsCacheValue testValue = new TimelineMetricsCacheValue(now, now + 1000, metrics, null);
+    StringBuilder value = new StringBuilder("b");
 
-    Set<String> metricNames = new HashSet<>(Arrays.asList("metric1", "metric2"));
-    String appId = "appId1";
-    String instanceId = "instanceId1";
-    TemporalInfo temporalInfo = new TemporalInfoImpl(100L, 200L, 1);
-    TimelineAppMetricCacheKey testKey = new TimelineAppMetricCacheKey(metricNames, appId, instanceId, temporalInfo);
-
-    expect(cacheEntryFactory.load(testKey)).andReturn(testValue).anyTimes();
+    expect(cacheEntryFactory.createEntry("a")).andReturn(value);
+    cacheEntryFactory.updateEntryValue("a", value);
+    expectLastCall().andAnswer(new IAnswer<Object>() {
+      @Override
+      public Object answer() throws Throwable {
+        String key = (String) getCurrentArguments()[0];
+        StringBuilder value = (StringBuilder) getCurrentArguments()[1];
+        System.out.println("key = " + key + ", value = " + value);
+        value.append("c");
+        return null;
+      }
+    });
 
     replay(cacheEntryFactory);
 
-    Configuration configuration = createNiceMock(Configuration.class);
-    expect(configuration.getMetricCacheTTLSeconds()).andReturn(3600);
-    expect(configuration.getMetricCacheIdleSeconds()).andReturn(1800);
-    expect(configuration.getMetricCacheEntryUnitSize()).andReturn(100).anyTimes();
-    replay(configuration);
+    // Need to set this due what seems like a bug in Ehcache 2.10.0, setting
+    // it on the second cache instance results in a assertion error.
+    // Since this is not out production use case, setting it here as well.
+    net.sf.ehcache.config.Configuration managerConfig = new net.sf.ehcache.config.Configuration();
+    managerConfig.setMaxBytesLocalHeap("10%");
+    CacheManager manager = CacheManager.create(managerConfig);
+    Cache cache = new Cache("test", 0, false, false, 10000, 10000);
+    UpdatingSelfPopulatingCache testCache = new UpdatingSelfPopulatingCache(cache, cacheEntryFactory);
+    manager.addCache(testCache);
 
-    DefaultStatisticsService statisticsService = new DefaultStatisticsService();
-    CacheManager manager = CacheManagerBuilder.newCacheManagerBuilder()
-            .using(statisticsService)
-            .build(true);
-
-    CacheConfigurationBuilder<TimelineAppMetricCacheKey, TimelineMetricsCacheValue> cacheConfigurationBuilder = createTestCacheConfiguration(configuration, cacheEntryFactory);
-    Cache<TimelineAppMetricCacheKey, TimelineMetricsCacheValue> cache = manager.createCache(TIMELINE_METRIC_CACHE_INSTANCE_NAME, cacheConfigurationBuilder);
-    TimelineMetricCache testCache = new TimelineMetricCache(cache, cacheEntryFactory, statisticsService);
-
-    TimelineMetrics testTimelineMetrics = testCache.getAppTimelineMetricsFromCache(testKey);
-    Assert.assertEquals(metrics, testTimelineMetrics);
+    Assert.assertEquals("b", testCache.get("a").getObjectValue().toString());
+    Assert.assertEquals("bc", testCache.get("a").getObjectValue().toString());
 
     verify(cacheEntryFactory);
   }
 
-  private CacheConfigurationBuilder createTestCacheConfiguration(Configuration configuration, TimelineMetricCacheEntryFactory cacheEntryFactory){
+  private CacheConfiguration createTestCacheConfiguration(Configuration configuration) {
 
+    CacheConfiguration cacheConfiguration = new CacheConfiguration()
+      .name(TIMELINE_METRIC_CACHE_INSTANCE_NAME)
+      .timeToLiveSeconds(configuration.getMetricCacheTTLSeconds()) // 1 hour
+      .timeToIdleSeconds(configuration.getMetricCacheIdleSeconds()) // 5 minutes
+      .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU)
+      .sizeOfPolicy(new SizeOfPolicyConfiguration() // Set sizeOf policy to continue on max depth reached - avoid OOM
+        .maxDepth(10000)
+        .maxDepthExceededBehavior(SizeOfPolicyConfiguration.MaxDepthExceededBehavior.CONTINUE))
+      .eternal(false)
+      .persistence(new PersistenceConfiguration()
+        .strategy(PersistenceConfiguration.Strategy.NONE.name()));
 
-    TimelineMetricCacheCustomExpiry timelineMetricCacheCustomExpiry = new TimelineMetricCacheCustomExpiry(
-            Duration.ofSeconds(configuration.getMetricCacheTTLSeconds()), // TTL
-            Duration.ofSeconds(configuration.getMetricCacheIdleSeconds())  // TTI
-    );
-
-    CacheConfigurationBuilder<TimelineAppMetricCacheKey, TimelineMetricsCacheValue> cacheConfigurationBuilder = CacheConfigurationBuilder
-            .newCacheConfigurationBuilder(
-                    TimelineAppMetricCacheKey.class,
-                    TimelineMetricsCacheValue.class,
-                    ResourcePoolsBuilder.newResourcePoolsBuilder()
-                    .heap(configuration.getMetricCacheEntryUnitSize(), EntryUnit.ENTRIES)
-            )
-            .withKeySerializer(TimelineAppMetricCacheKeySerializer.class)
-            .withValueSerializer(TimelineMetricsCacheValueSerializer.class)
-            .withLoaderWriter(cacheEntryFactory)
-            .withExpiry(timelineMetricCacheCustomExpiry);
-
-    return cacheConfigurationBuilder;
+    cacheConfiguration.setMaxBytesLocalHeap(20*1024*1024l);
+    return cacheConfiguration;
   }
   @Test
   public void testTimelineMetricCacheProviderGets() throws Exception {
     Configuration configuration = createNiceMock(Configuration.class);
     expect(configuration.getMetricCacheTTLSeconds()).andReturn(3600);
-    expect(configuration.getMetricCacheIdleSeconds()).andReturn(1800);
-    expect(configuration.getMetricCacheEntryUnitSize()).andReturn(100).anyTimes();
+    expect(configuration.getMetricCacheIdleSeconds()).andReturn(100);
+    expect(configuration.getMetricsCacheManagerHeapPercent()).andReturn("10%").anyTimes();
+
     replay(configuration);
 
     final long now = System.currentTimeMillis();
 
     TimelineMetrics metrics = new TimelineMetrics();
+
     TimelineMetric timelineMetric = new TimelineMetric();
     timelineMetric.setMetricName("cpu_user");
     timelineMetric.setAppId("app1");
@@ -154,6 +149,7 @@ public class TimelineMetricCacheTest {
     timelineMetric.setMetricValues(metricValues);
 
     metrics.getMetrics().add(timelineMetric);
+
     TimelineMetricCacheEntryFactory cacheEntryFactory = createMock(TimelineMetricCacheEntryFactory.class);
 
     TimelineAppMetricCacheKey queryKey = new TimelineAppMetricCacheKey(
@@ -168,7 +164,10 @@ public class TimelineMetricCacheTest {
       new TemporalInfoImpl(now, now + 2000, 1)
     );
 
-    expect(cacheEntryFactory.load(anyObject())).andReturn(value);
+    expect(cacheEntryFactory.createEntry(anyObject())).andReturn(value);
+    cacheEntryFactory.updateEntryValue(testKey, value);
+    expectLastCall().once();
+
     replay(cacheEntryFactory);
 
     TimelineMetricCacheProvider cacheProvider = createMockBuilder(TimelineMetricCacheProvider.class)
@@ -176,7 +175,7 @@ public class TimelineMetricCacheTest {
       .withConstructor(configuration, cacheEntryFactory)
       .createNiceMock();
 
-    expect(cacheProvider.createCacheConfiguration()).andReturn(createTestCacheConfiguration(configuration, cacheEntryFactory)).anyTimes();
+    expect(cacheProvider.createCacheConfiguration()).andReturn(createTestCacheConfiguration(configuration)).anyTimes();
     replay(cacheProvider);
 
     TimelineMetricCache cache = cacheProvider.getTimelineMetricsCache();
@@ -366,8 +365,8 @@ public class TimelineMetricCacheTest {
       }
     }
 
-    assertNotNull(newMetric1);
-    assertNotNull(newMetric2);
+    Assert.assertNotNull(newMetric1);
+    Assert.assertNotNull(newMetric2);
     Assert.assertEquals(3, newMetric1.getMetricValues().size());
     Assert.assertEquals(3, newMetric2.getMetricValues().size());
     Map<Long, Double> newMetricsMap = newMetric1.getMetricValues();
@@ -408,8 +407,8 @@ public class TimelineMetricCacheTest {
   public void testTimelineMetricCachePrecisionUpdates() throws Exception {
     Configuration configuration = createNiceMock(Configuration.class);
     expect(configuration.getMetricCacheTTLSeconds()).andReturn(3600);
-    expect(configuration.getMetricCacheIdleSeconds()).andReturn(1800);
-    expect(configuration.getMetricCacheEntryUnitSize()).andReturn(100).anyTimes();
+    expect(configuration.getMetricCacheIdleSeconds()).andReturn(100);
+    expect(configuration.getMetricsCacheManagerHeapPercent()).andReturn("10%").anyTimes();
     expect(configuration.getMetricRequestBufferTimeCatchupInterval()).andReturn(1000l).anyTimes();
     replay(configuration);
 
@@ -423,16 +422,16 @@ public class TimelineMetricCacheTest {
     //Original Values
     Map<String, TimelineMetric> valueMap = new HashMap<>();
     TimelineMetric timelineMetric = new TimelineMetric();
-    timelineMetric.setMetricName("cpu_user1");
+    timelineMetric.setMetricName("cpu_user");
     timelineMetric.setAppId("app1");
 
     TreeMap<Long, Double> metricValues = new TreeMap<>();
     for (long i = 1 * year - 1 * day; i >= 0; i -= 1 * day) {
-      metricValues.put(now - i, 1.0);
+      metricValues.put(now-i, 1.0);
     }
 
     timelineMetric.setMetricValues(metricValues);
-    valueMap.put("cpu_user1", timelineMetric);
+    valueMap.put("cpu_user", timelineMetric);
 
     List<TimelineMetric> timelineMetricList = new ArrayList<>();
     timelineMetricList.add(timelineMetric);
@@ -440,7 +439,7 @@ public class TimelineMetricCacheTest {
     metrics.setMetrics(timelineMetricList);
 
     TimelineAppMetricCacheKey key = new TimelineAppMetricCacheKey(
-        Collections.singleton("cpu_user1"),
+        Collections.singleton("cpu_user"),
         "app1",
         new TemporalInfoImpl(now-1*year, now, 1)
     );
@@ -449,8 +448,8 @@ public class TimelineMetricCacheTest {
     //Updated values
     Map<String, TimelineMetric> newValueMap = new HashMap<>();
     TimelineMetric newTimelineMetric = new TimelineMetric();
-    newTimelineMetric.setMetricName("cpu_user2");
-    newTimelineMetric.setAppId("app2");
+    newTimelineMetric.setMetricName("cpu_user");
+    newTimelineMetric.setAppId("app1");
 
     TreeMap<Long, Double> newMetricValues = new TreeMap<>();
     for(long i=1*hour;i<=2*day;i+=hour) {
@@ -458,7 +457,7 @@ public class TimelineMetricCacheTest {
     }
 
     newTimelineMetric.setMetricValues(newMetricValues);
-    newValueMap.put("cpu_user2", newTimelineMetric);
+    newValueMap.put("cpu_user", newTimelineMetric);
 
     List<TimelineMetric> newTimelineMetricList = new ArrayList<>();
     newTimelineMetricList.add(newTimelineMetric);
@@ -466,8 +465,8 @@ public class TimelineMetricCacheTest {
     newMetrics.setMetrics(newTimelineMetricList);
 
     TimelineAppMetricCacheKey newKey = new TimelineAppMetricCacheKey(
-        Collections.singleton("cpu_user2"),
-        "app2",
+        Collections.singleton("cpu_user"),
+        "app1",
         new TemporalInfoImpl(now - 1 * day, now + 2 * day, 1)
     );
     newKey.setSpec("");
@@ -496,7 +495,7 @@ public class TimelineMetricCacheTest {
       .withConstructor(configuration, cacheEntryFactory)
       .createNiceMock();
 
-    expect(cacheProvider.createCacheConfiguration()).andReturn(createTestCacheConfiguration(configuration, cacheEntryFactory)).anyTimes();
+    expect(cacheProvider.createCacheConfiguration()).andReturn(createTestCacheConfiguration(configuration)).anyTimes();
     replay(cacheProvider);
 
     TimelineMetricCache cache = cacheProvider.getTimelineMetricsCache();
@@ -506,21 +505,16 @@ public class TimelineMetricCacheTest {
     List<TimelineMetric> metricsList = metrics.getMetrics();
     Assert.assertEquals(1, metricsList.size());
     TimelineMetric metric = metricsList.iterator().next();
-    Assert.assertEquals("cpu_user1", metric.getMetricName());
+    Assert.assertEquals("cpu_user", metric.getMetricName());
     Assert.assertEquals("app1", metric.getAppId());
     Assert.assertEquals(metricValues, metric.getMetricValues());
-
-    System.out.println("first call values: " + metric.getMetricValues());
-    System.out.println();
 
     // call to update with new key
     metrics = cache.getAppTimelineMetricsFromCache(newKey);
     metricsList = metrics.getMetrics();
     Assert.assertEquals(1, metricsList.size());
-    metric = metricsList.iterator().next();
-    Assert.assertEquals("cpu_user2", metric.getMetricName());
-    Assert.assertEquals("app2", metric.getAppId());
-    System.out.println("Second call values: " + metric.getMetricValues());
+    Assert.assertEquals("cpu_user", metric.getMetricName());
+    Assert.assertEquals("app1", metric.getAppId());
     Assert.assertEquals(newMetricValues, metric.getMetricValues());
 
     verify(configuration, metricsRequestHelperForGets, cacheEntryFactory);
