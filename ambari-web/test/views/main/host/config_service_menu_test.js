@@ -46,7 +46,7 @@ describe('App.MainHostServiceMenuView', function () {
       App.get.restore();
     });
 
-    it.skip("no hostComponents", function() {
+    it("no hostComponents", function() {
       view.set('host', Em.Object.create({
         hostComponents: null
       }));

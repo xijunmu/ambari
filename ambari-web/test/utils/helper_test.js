@@ -221,7 +221,7 @@ describe('utils/helper', function() {
 
   });
 
-  describe.skip('App helpers', function(){
+  describe('App helpers', function(){
     var appendDiv = function() {
       $('body').append('<div id="tooltip-test"></div>');
     };

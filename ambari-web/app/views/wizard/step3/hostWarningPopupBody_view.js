@@ -70,10 +70,7 @@ App.WizardStep3HostWarningPopupBody = Em.View.extend({
     initContent: function () {
       this.set('isLoaded', false);
       //The lazy loading for select elements supported only by Firefox and Chrome
-      var isBrowserSupported =
-typeof $ !== 'undefined' &&
-typeof $.browser !== 'undefined' &&
-($.browser.mozilla || ($.browser.safari && navigator.userAgent.indexOf('Chrome') !== -1));
+      var isBrowserSupported = $.browser.mozilla || ($.browser.safari && navigator.userAgent.indexOf('Chrome') !== -1);
       var isLazyLoading = isBrowserSupported && this.get('hosts').length > 100;
       this.set('isLazyLoading', isLazyLoading);
       if (isLazyLoading) {

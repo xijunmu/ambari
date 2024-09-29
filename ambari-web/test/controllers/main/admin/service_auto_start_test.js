@@ -151,7 +151,7 @@ describe('App.MainAdminServiceAutoStartController', function() {
     });
   });
 
-  describe.skip('#saveClusterConfigs()', function() {
+  describe('#saveClusterConfigs()', function() {
     it('App.ajax.send should be called', function() {
       controller.saveClusterConfigs({recovery_enabled: 'false'}, true);
       var args = testHelpers.findAjaxRequest('name', 'admin.save_configs');
@@ -168,7 +168,7 @@ describe('App.MainAdminServiceAutoStartController', function() {
     });
   });
 
-  describe.skip('#saveComponentSettingsCall()', function() {
+  describe('#saveComponentSettingsCall()', function() {
     it('App.ajax.send should be called', function() {
       controller.saveComponentSettingsCall(true, ['c1', 'c2']);
       var args = testHelpers.findAjaxRequest('name', 'components.update');

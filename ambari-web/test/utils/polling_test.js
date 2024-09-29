@@ -160,7 +160,7 @@ describe('App.Poll', function () {
 
   });
 
-  describe.skip('#setRequestId', function () {
+  describe('#setRequestId', function () {
 
     var ajaxObj;
 

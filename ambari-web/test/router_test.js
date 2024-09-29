@@ -419,7 +419,7 @@ describe('App.Router', function () {
     });
   });
 
-  describe.skip("#getAuthenticated", function () {
+  describe("#getAuthenticated", function () {
     beforeEach(function () {
       router = App.Router.create();
       this.mockGetCurrentLocationUrl = sinon.stub(router, 'getCurrentLocationUrl');

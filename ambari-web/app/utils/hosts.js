@@ -247,7 +247,6 @@ module.exports = {
           App.ajax.send({
             name: 'bulk_request.hosts.update_rack_id',
             sender: self,
-            dataType:'text',
             data: {
               hostNames: hostNames.join(','),
               requestInfo: operationData.message,

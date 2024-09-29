@@ -208,7 +208,7 @@ describe('App.MainServiceController', function () {
 
   });
 
-  describe.skip('#startAllService', function() {
+  describe('#startAllService', function() {
 
     beforeEach(function() {
       sinon.stub(mainServiceController, 'allServicesCall', Em.K);
@@ -232,7 +232,7 @@ describe('App.MainServiceController', function () {
 
   });
 
-  describe.skip('#stopAllService', function() {
+  describe('#stopAllService', function() {
 
     beforeEach(function() {
       sinon.stub(mainServiceController, 'allServicesCall', Em.K);

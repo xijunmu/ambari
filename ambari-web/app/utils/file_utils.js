@@ -30,12 +30,8 @@ module.exports = {
    * @param fileName {String}
    */
   downloadTextFile: function (data, fileType, fileName) {
-    if (typeof window !== 'undefined' && window.navigator && window.navigator.userAgent.indexOf('MSIE') !== -1) {
-      var ieVersion = parseInt(window.navigator.userAgent.split('MSIE')[1]);
-      
-      if (ieVersion < 10) {
+    if ($.browser.msie && $.browser.version < 10) {
       this.openInfoInNewTab(data);
-      }
     } else if (typeof safari !== 'undefined') {
       this.safariDownload(data, fileType, fileName);
     } else {

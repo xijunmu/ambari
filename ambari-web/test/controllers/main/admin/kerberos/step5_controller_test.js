@@ -74,7 +74,7 @@ describe('App.KerberosWizardStep5Controller', function() {
     });
   });
 
-  describe.skip("#getCSVDataSuccessCallback()", function () {
+  describe("#getCSVDataSuccessCallback()", function () {
 
     beforeEach(function() {
       sinon.stub(fileUtils, 'downloadTextFile');

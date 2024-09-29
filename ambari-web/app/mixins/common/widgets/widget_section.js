@@ -388,7 +388,6 @@ App.WidgetSectionMixin = Ember.Mixin.create({
     };
     return App.ajax.send({
       name: 'widget.layout.edit',
-      dataType:'text',
       sender: this,
       data: {
         layoutId: activeLayout.get("id"),

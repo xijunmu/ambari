@@ -218,7 +218,6 @@ App.MainServiceInfoMetricsController = Em.Controller.extend(App.WidgetSectionMix
         return App.ajax.send({
           name: 'widget.layout.edit',
           sender: self,
-          dataType:'text',
           data: {
             layoutId: activeLayout.get("id"),
             data: data
@@ -274,7 +273,6 @@ App.MainServiceInfoMetricsController = Em.Controller.extend(App.WidgetSectionMix
     return App.ajax.send({
       name: 'widget.layout.edit',
       sender: this,
-      dataType:'text',
       data: {
         layoutId: activeLayout.get("id"),
         data: data

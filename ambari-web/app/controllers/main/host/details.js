@@ -389,7 +389,7 @@ App.MainHostDetailsController = Em.Controller.extend(App.SupportClientConfigsDow
    */
   checkNnLastCheckpointTime: function(callback, hostName) {
     var self = this;
-    this.pullNnCheckPointTime(hostName).then(function () {
+    this.pullNnCheckPointTime(hostName).complete(function () {
       var isNNCheckpointTooOld = self.get('isNNCheckpointTooOld');
       self.set('isNNCheckpointTooOld', null);
       if (isNNCheckpointTooOld) {
@@ -891,9 +891,6 @@ App.MainHostDetailsController = Em.Controller.extend(App.SupportClientConfigsDow
    * @method installNewComponentSuccessCallback
    */
   installNewComponentSuccessCallback: function (data, opt, params) {
-    if(typeof data==="string"){
-      data=JSON.parse(data)
-    }
     if (!data || !data.Requests || !data.Requests.id) {
       return false;
     }
@@ -2341,7 +2338,6 @@ App.MainHostDetailsController = Em.Controller.extend(App.SupportClientConfigsDow
     App.ajax.send({
       name: 'bulk_request.hosts.passive_state',
       sender: this,
-      dataType:'text',
       data: {
         hostNames: this.get('content.hostName'),
         passive_state: state,
@@ -3072,7 +3068,7 @@ App.MainHostDetailsController = Em.Controller.extend(App.SupportClientConfigsDow
     var error = Em.I18n.t('services.service.actions.run.executeCustomCommand.error');
     if(data && data.responseText){
       try {
-        var json = JSON.parse(data.responseText);
+        var json = $.parseJSON(data.responseText);
         error += json.message;
       } catch (err) {}
     }

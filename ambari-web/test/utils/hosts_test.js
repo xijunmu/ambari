@@ -3259,7 +3259,7 @@ describe('hosts utils', function () {
 
   });
 
-  describe.skip('#setRackInfo', function () {
+  describe('#setRackInfo', function () {
 
     beforeEach(function () {
       App.ModalPopup.show.restore();
@@ -3326,7 +3326,7 @@ describe('hosts utils', function () {
 
     });
 
-    describe.skip('#onPrimary', function () {
+    describe('#onPrimary', function () {
 
       var popup,
         cases = [

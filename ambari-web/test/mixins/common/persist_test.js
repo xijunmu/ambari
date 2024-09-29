@@ -62,7 +62,7 @@ describe('App.Persist', function () {
     });
   });
 
-  describe.skip('#post', function() {
+  describe('#post', function() {
 
     it('App.ajax.send should be called', function() {
       mixin.post({"foo": "bar"});

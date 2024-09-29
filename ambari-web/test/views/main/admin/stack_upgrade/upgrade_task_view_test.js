@@ -188,7 +188,7 @@ describe('App.upgradeTaskView', function () {
     });
   });
 
-  describe.skip('#doPolling', function() {
+  describe('#doPolling', function() {
 
     it('getUpgradeTask should be called', function() {
       view.set('isExpanded', true);

@@ -128,7 +128,6 @@ App.Persist = Em.Mixin.create({
     return App.ajax.send({
       'name': 'persist.post',
       'sender': this,
-      dataType:'text',
       'beforeSend': 'postUserPrefBeforeSend',
       'data': {
         'keyValuePair': keyValuePair

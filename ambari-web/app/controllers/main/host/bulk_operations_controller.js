@@ -501,7 +501,6 @@ App.BulkOperationsController = Em.Controller.extend({
       return App.ajax.send({
         name: 'bulk_request.hosts.passive_state',
         sender: this,
-        dataType:'text',
         data: {
           hostNames: hostNames.join(','),
           passive_state: operationData.state,

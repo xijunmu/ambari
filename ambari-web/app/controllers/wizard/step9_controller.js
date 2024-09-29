@@ -1113,7 +1113,7 @@ App.WizardStep9Controller = Em.Controller.extend(App.ReloadPopupMixin, {
       },
       success: 'isAllComponentsInstalledSuccessCallback',
       error: 'isAllComponentsInstalledErrorCallback'
-    }).then(function () {
+    }).complete(function () {
       dfd.resolve();
     });
     return dfd.promise();
@@ -1229,7 +1229,7 @@ App.WizardStep9Controller = Em.Controller.extend(App.ReloadPopupMixin, {
         fields: '?fields=RootServiceComponents/properties/skip.service.checks'
       },
       success: 'loadDoServiceChecksFlagSuccessCallback'
-    }).then(function(){
+    }).complete(function(){
       def.resolve();
     });
     return def.promise();

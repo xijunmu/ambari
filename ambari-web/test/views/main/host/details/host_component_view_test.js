@@ -36,7 +36,7 @@ function getView() {
   });
 }
 
-describe.skip('App.HostComponentView', function() {
+describe('App.HostComponentView', function() {
 
   beforeEach(function() {
     hostComponentView = getView();
@@ -275,7 +275,7 @@ describe.skip('App.HostComponentView', function() {
     });
   });
 
-  describe.skip('#getCustomCommandLabel', function() {
+  describe('#getCustomCommandLabel', function() {
 
     beforeEach(function () {
       sinon.stub(App.HostComponentActionMap, 'getMap', function () {

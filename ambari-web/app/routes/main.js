@@ -37,7 +37,7 @@ module.exports = Em.Route.extend(App.RouterRedirections, {
         var applicationController = App.router.get('applicationController');
         App.router.get('experimentalController').loadSupports().complete(function () {
           applicationController.startKeepAlivePoller();
-          clusterController.loadAmbariProperties().then(function () {
+          clusterController.loadAmbariProperties().complete(function () {
             App.router.get('mainViewsController').loadAmbariViews();
             clusterController.loadClusterName(false).done(function () {
               $('#main').removeClass('install-wizard-content');
@@ -59,7 +59,7 @@ module.exports = Em.Route.extend(App.RouterRedirections, {
                 }
                 else {
                   Em.run.next(function () {
-                    App.clusterStatus.updateFromServer().then(function () {
+                    App.clusterStatus.updateFromServer().complete(function () {
                       var currentClusterStatus = App.clusterStatus.get('value');
                       if (router.get('currentState.parentState.name') !== 'views' && router.get('currentState.parentState.name') !== 'view'
                           && currentClusterStatus && self.get('installerStatuses').contains(currentClusterStatus.clusterState)) {

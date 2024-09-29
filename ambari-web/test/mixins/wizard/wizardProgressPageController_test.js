@@ -22,7 +22,7 @@ var testHelpers = require('test/helpers');
 describe('App.wizardProgressPageControllerMixin', function() {
   var mixedObject = Em.Object.extend(App.wizardProgressPageControllerMixin, {});
 
-  describe.skip('#createComponent', function() {
+  describe('#createComponent', function() {
     var mixedObjectInstance;
     beforeEach(function() {
       mixedObjectInstance = mixedObject.create({});

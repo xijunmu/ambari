@@ -989,7 +989,7 @@ App.ManageConfigGroupsController = Em.Controller.extend(App.ConfigOverridable, {
           if (xhr && typeof (errorThrown) === 'string') {
             var error = xhr.status + "(" + errorThrown + ") ";
             try {
-              var json = JSON.parse(xhr.responseText);
+              var json = $.parseJSON(xhr.responseText);
               error += json.message;
             } catch (err) {
             }

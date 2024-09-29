@@ -55,7 +55,7 @@ describe('App.MainServiceInfoMetricsView', function() {
     });
   });
 
-  describe.skip("#constructGraphObjects()", function() {
+  describe("#constructGraphObjects()", function() {
     var mock = Em.Object.create({
       isServiceWithWidgets: false
     });

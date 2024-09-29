@@ -247,7 +247,7 @@ describe('App.InstallerStep7Controller', function () {
     });
   });
 
-  describe.skip('#checkDatabaseConnectionTest', function () {
+  describe('#checkDatabaseConnectionTest', function () {
 
     beforeEach(function () {
       installerStep7Controller.set('content', {

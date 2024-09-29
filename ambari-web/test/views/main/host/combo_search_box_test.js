@@ -432,7 +432,7 @@ describe('App.MainHostComboSearchBoxView', function () {
     });
   });
 
-  describe.skip("#searchByServices()", function () {
+  describe("#searchByServices()", function () {
     var container = {
       callback: Em.K
     };

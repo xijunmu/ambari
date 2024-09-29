@@ -254,7 +254,6 @@ App.ReassignMasterWizardStep4Controller = App.HighAvailabilityProgressPageContro
       App.ajax.send({
         name: 'common.host.host_component.passive',
         sender: this,
-        dataType:'text',
         data: {
           hostName: hostName,
           passive_state: "ON",
@@ -442,7 +441,6 @@ App.ReassignMasterWizardStep4Controller = App.HighAvailabilityProgressPageContro
       App.ajax.send({
         name: 'common.delete.host_component',
         sender: this,
-        dataType:'text',
         data: {
           hostName: hostName,
           componentName: hostComponents[i]

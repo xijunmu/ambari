@@ -773,7 +773,6 @@ App.MainAdminStackAndUpgradeController = Em.Controller.extend(App.LocalStorage, 
     return App.ajax.send({
       name: 'admin.upgrade.abort',
       sender: this,
-      dataType:'text',
       data: {
         upgradeId: this.get('upgradeId'),
         isDowngrade: this.get('isDowngrade')
@@ -812,7 +811,6 @@ App.MainAdminStackAndUpgradeController = Em.Controller.extend(App.LocalStorage, 
     return App.ajax.send({
       name: 'admin.upgrade.suspend',
       sender: this,
-      dataType:'text',
       data: {
         upgradeId: this.get('upgradeId'),
         isDowngrade: this.get('isDowngrade')
@@ -830,7 +828,7 @@ App.MainAdminStackAndUpgradeController = Em.Controller.extend(App.LocalStorage, 
     var body = Em.I18n.t('admin.stackUpgrade.state.paused.fail.body');
     if (data && data.responseText) {
       try {
-        var json = JSON.parse(data.responseText);
+        var json = $.parseJSON(data.responseText);
         body = body + ' ' + json.message;
       } catch (err) {}
     }
@@ -846,7 +844,7 @@ App.MainAdminStackAndUpgradeController = Em.Controller.extend(App.LocalStorage, 
     var body = Em.I18n.t('admin.stackDowngrade.state.paused.fail.body');
     if(data && data.responseText){
       try {
-        var json = JSON.parse(data.responseText);
+        var json = $.parseJSON(data.responseText);
         body = body + ' ' + json.message;
       } catch (err) {}
     }
@@ -934,7 +932,7 @@ App.MainAdminStackAndUpgradeController = Em.Controller.extend(App.LocalStorage, 
     var body = "";
     if (data && data.responseText) {
       try {
-        var json = JSON.parse(data.responseText);
+        var json = $.parseJSON(data.responseText);
         body = json.message;
       } catch (err) {}
     }
@@ -1768,7 +1766,7 @@ App.MainAdminStackAndUpgradeController = Em.Controller.extend(App.LocalStorage, 
 
         App.ajax.send({
           name: 'admin.stack_versions.edit.repo',
-          sender: self,
+          sender: this,
           data: {
             stackName: App.get('currentStackName'),
             stackVersion: stackVersionNumber,
@@ -1832,7 +1830,6 @@ App.MainAdminStackAndUpgradeController = Em.Controller.extend(App.LocalStorage, 
     return App.ajax.send({
       name: 'admin.stack_versions.validate.repo',
       sender: this,
-      dataType:'text',
       data: {
         repo: repo,
         repoName: repo.get('repoName'),
@@ -1881,7 +1878,7 @@ App.MainAdminStackAndUpgradeController = Em.Controller.extend(App.LocalStorage, 
     var body = "";
     if (data && data.responseText) {
       try {
-        var json = JSON.parse(data.responseText);
+        var json = $.parseJSON(data.responseText);
         body = json.message;
       } catch (err) {}
     }
@@ -2056,7 +2053,6 @@ App.MainAdminStackAndUpgradeController = Em.Controller.extend(App.LocalStorage, 
     return App.ajax.send({
       name: 'admin.upgrade.upgradeItem.setState',
       sender: this,
-      dataType:'text',
       data: {
         upgradeId: item.get('request_id'),
         itemId: item.get('stage_id'),

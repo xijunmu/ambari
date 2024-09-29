@@ -31,7 +31,7 @@ describe('App.ReassignMasterWizardStep4View', function () {
     view = getView();
   });
   
-  describe.skip('#noticeCompleted', function() {
+  describe('#noticeCompleted', function() {
     
     it('should return notice for manual steps', function() {
       view.set('controller', {

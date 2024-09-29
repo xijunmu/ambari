@@ -86,7 +86,7 @@ describe('App.HostTableMenuView', function() {
     });
   });
 
-  describe.skip("#slaveItemView", function () {
+  describe("#slaveItemView", function () {
     var slaveItemView;
 
     beforeEach(function () {

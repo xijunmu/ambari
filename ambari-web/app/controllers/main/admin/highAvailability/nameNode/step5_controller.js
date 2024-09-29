@@ -51,7 +51,6 @@ App.HighAvailabilityWizardStep5Controller = App.HighAvailabilityProgressPageCont
     return App.ajax.send({
       name: 'common.host.host_component.passive',
       sender: this,
-      dataType:'text',
       data: {
         hostName: hostName,
         passive_state: "ON",

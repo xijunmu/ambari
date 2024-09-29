@@ -475,7 +475,6 @@ App.ManageAlertGroupsController = Em.Controller.extend({
     var sendData = {
       name: 'alert_groups.create',
       data: data,
-      dataType:'text',
       success: 'successFunction',
       error: 'errorFunction',
       successFunction: function () {
@@ -506,7 +505,6 @@ App.ManageAlertGroupsController = Em.Controller.extend({
   updateAlertGroup: function (alertGroup, successCallback, errorCallback) {
     var sendData = {
       name: 'alert_groups.update',
-      dataType:'text',
       data: {
         group_id: alertGroup.id,
         name: alertGroup.get('name'),
@@ -543,7 +541,6 @@ App.ManageAlertGroupsController = Em.Controller.extend({
       data: {
         group_id: alertGroup.id
       },
-      dataType:'text',
       success: 'successFunction',
       error: 'errorFunction',
       successFunction: function () {

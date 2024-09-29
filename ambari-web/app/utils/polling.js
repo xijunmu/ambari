@@ -71,7 +71,7 @@ App.Poll = Em.Object.extend(App.ReloadPopupMixin, {
       dataType: 'text',
       timeout: App.timeout,
       success: function (data) {
-        var jsonData = JSON.parse(data);
+        var jsonData = jQuery.parseJSON(data);
         if (Em.isNone(jsonData)) {
           self.set('isSuccess', true);
           self.set('isError', false);
