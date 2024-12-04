@@ -78,6 +78,8 @@ VER_NT_SERVER = 3
 # Linux specific releases, caching them since they are execution invariants
 _IS_ORACLE_LINUX = os.path.exists('/etc/oracle-release')
 _IS_REDHAT_LINUX = os.path.exists('/etc/redhat-release')
+_IS_KYLIN_LINUX = os.path.exists('/etc/kylin-release')
+_IS_OPENEULER_LINUX = os.path.exists('/etc/openEuler-release')
 
 OS_RELEASE_FILE = "/etc/os-release"
 
@@ -86,6 +88,12 @@ def _is_oracle_linux():
 
 def _is_redhat_linux():
   return _IS_REDHAT_LINUX
+
+def _is_kylin_linux():
+  return _IS_KYLIN_LINUX
+
+def _is_openeuler_linux():
+  return _IS_OPENEULER_LINUX
 
 def _is_powerpc():
   return platform.processor() == 'powerpc' or platform.machine().startswith('ppc')
@@ -194,7 +202,12 @@ class OSCheck:
         distribution = ("", "", "")
     else:
       # linux distribution
-      distribution = distro.linux_distribution(full_distribution_name=False)
+      if _is_kylin_linux():
+        distribution = ("centos","8.5","Core")
+      elif _is_openeuler_linux():
+        distribution = ("centos","8.5","Core")
+      else:
+        distribution = distro.linux_distribution(full_distribution_name=False)
 
     if distribution[0] == '':
       distribution = advanced_check(distribution)
@@ -248,9 +261,9 @@ class OSCheck:
       operatingSystem = 'sles'
     elif operatingSystem.startswith('red hat enterprise linux'):
       operatingSystem = 'redhat'
-    elif operatingSystem.startswith('rocky linux'):
+    elif operatingSystem.startswith('rocky'):
       operatingSystem = 'redhat'
-    elif operatingSystem.startswith('kylin linux'):
+    elif operatingSystem.startswith('kylin'):
       operatingSystem = 'redhat'
     elif operatingSystem.startswith('openeuler'):
       operatingSystem = 'redhat'
